@@ -1,0 +1,88 @@
+---
+title: "Food at College"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r, warning=FALSE, message=FALSE}
+# From your file menu (at the top of R-Studio) select:
+# "Session -> Set working directory -> To source file location"
+# Then play this chunk to get the data into R.
+library(mosaic)
+library(car)
+library(DT)
+library(pander)
+library(readr)
+food <- read_csv("/Users/bridg3r/Desktop/Spring 2022/Intermediate Stats/Statistics-Notebook-master/Data/food.csv") #food.csv is in the Data folder...
+```
+
+
+## Background 
+
+Statistics are great because our minds and own biases can easily bend our perception of reality, but numbers tell us the true story. In this survey we have, where people were primarly asked questions that related to food and health, we will see if people's own perceptions of their own weight had a impact on their guesses of how many calories a food might have, or if there is some sort of correlation there. Recipients of the survey were asked to choose between options of seeing themselves as slim, very fit, just right, slightly overweight, overweight, or neither. We will ommit the "neither" answers.
+    Also as part of the analysis, a new variable was created that was the sum of all the guessed calories for foods divided by the total number of foods. This helps us to be less biased and more likely to see a real trend across foods, rather than looking at guesses on just one single food.
+    
+## Analysis
+
+### Data Exploration 
+
+```{r, warning=FALSE, message=FALSE}
+vect <- c('slim', 'very fit', 'just right', 'slightly overweight', 'overweight')
+
+foods2 <- food %>% filter(self_perception_weight != 6) %>% 
+  mutate(totalGuess = (calories_chicken + tortilla_calories + turkey_calories + waffle_calories)/4,
+      self_perception_weight = vect[self_perception_weight]) 
+
+ggplot(foods2, aes(group=self_perception_weight, x=self_perception_weight, y=totalGuess)) + 
+  geom_boxplot() +
+  labs(x = 'Self Perception', y = 'Average Calorie Guess of Foods')
+
+pander(favstats(totalGuess ~ self_perception_weight, data=foods2)[,-10])
+
+```
+
+The summaries above give us some good initial insights on the data. It seems that overall the guesses do tend to vary between different peoples' perceptions of themselves. The box plot gives us a good view the distribution of data between groups and the table shows us the mean of each group. The question is though, do they vary enough to be considered statistically significant?
+
+
+### Tests
+
+Our question is: Do people's perceptions of calories in food change based on their perception of their own weight? When comparing multiple groups at once, usually we would perform an ANOVA test, in which case the null and alternative hypothesis would be: 
+
+$$
+  H_0: \mu_\text{slim} = \mu_\text{very fit} = \mu_\text{just right} = \mu_\text{slightly overweight} = \mu_\text{overweight}
+$$
+$$ 
+  H_a: \mu_\text{i} \ne \mu\text{ for atleast one i}
+$$
+$$
+	\alpha = .05
+$$
+Unfortunately, since the table above shows us that the count for two of our groups is only six, then we know that those sample sizes aren't normally distributed so our ANOVA requirements are not met. Luckily, we can still perform a non-parametric test known as the Kruskal-Wallis test. With this, we phrase our null and alternative hypothesis as follows:
+
+$$
+  H_0: \text{All samples are from the same distribution.}
+$$
+$$ 
+  H_a: \text{At least one sample's distribution is stochastically different.}
+$$
+$$
+	\alpha = .05
+$$
+
+```{r, warning=FALSE, message=FALSE}
+pander(kruskal.test(totalGuess ~ self_perception_weight, data = foods2))
+```
+
+Since the p-value is not less than alpha we must say that our test is inconclusive and that there is not enough evidence to reject the null that all of the samples for each group are from the same distribution. 
+
+## Interpretation
+
+The results of our test really didn't prove much. Currently, there is no evidence that people's self-perception of their weight affects how many calories they guess a food to have. Still though, there did seem to be a difference when simply examining the graphical and numerical summaries. Possibly with more data, our null hypothesis could be proven to be false. This sort of study and investigation would possibly be useful for better understanding why people with eating disorders may choose to eat what they eat, whether it be over-eating or under-eating. 
+
+
+
+
+
+

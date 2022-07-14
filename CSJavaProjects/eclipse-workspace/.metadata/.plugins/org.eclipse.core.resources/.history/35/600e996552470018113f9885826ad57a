@@ -1,0 +1,21 @@
+
+import java.util.Scanner;
+
+public class mat {
+
+
+	public static void main(String[] args) {
+		Scanner s = new Scanner (System.in);
+		
+		int m = s.nextInt();
+		int n = s.nextInt();
+		
+		int[][] matrix = new int [m][n];
+		
+		
+		for(int j = 0; j < matrix.length-1; j++)
+			for(int i =0; i < matrix[m].length-1; i++) 
+				matrix[m][n] = s.nextInt();
+		
+}
+}

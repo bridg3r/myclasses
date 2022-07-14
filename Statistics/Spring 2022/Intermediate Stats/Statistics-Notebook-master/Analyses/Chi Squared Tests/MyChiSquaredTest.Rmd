@@ -1,0 +1,110 @@
+---
+title: "Chi Squared Test"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+
+<!-- Directions
+
+Come up with a chi squared test analysis of your own creation. 
+
+* Write the Background and clearly state your question. Then collect data and perform the chi-squared test analysis in order to answer your question. Use the proper order of first, ask the question, then second, figure out the answer.
+
+* You can use data from 
+    - An R data set
+    - the internet (like weather data, Facebook data, or sports data) 
+    - your own experiment 
+    - your own observational study
+* However,     
+    - Do not violate the "Human Subjects Rules" of the university: http://www.byui.edu/executive-strategy-and-planning/institutional-research/research-and-assessments/research-and-surveys
+
+* You need a sample size large enough to meet the requirements of the chi squared test. Unfortunately, the sample size is completely dependent on the situation you select. A good rule of thumb is 10 observations per "combination-group" in your data.
+
+-->
+
+
+
+
+```{r, include=FALSE}
+library(mosaic)
+library(tidyverse)
+data <- read_csv('/Users/bridg3r/Desktop/Spring 2022/Intermediate Stats/Statistics-Notebook-master/Data/HighSchoolSeniors.csv')
+data %>% glimpse()
+```
+
+
+### Background 
+
+Zodiac signs have become increasingly popular for us today. The idea is that the time of year you were born has a strong effect on your personality. A study actually proving or disproving the veracity of this claim would likely require much more complex data than what we have, but we can still run a chi-squared test to potentially gain some insights. An individual's favorite season could potentially correlate with someone's personality type and so we ask: Does the month that a person is born correlate with what sort of music genre they prefer? We will use data that was collected from a survey conducted amongst high school seniors.
+
+### Hypothesis
+ 
+Our null and alternative hypothesis are as follows:
+
+$$
+  H_0: \text{Birth month and favorite season are independent.}
+$$
+
+$$
+  H_0: \text{Birth month and favortie season are associated (not independent).}
+$$
+We will be using a level of significance α=0.05.
+
+### A look at the Data
+
+Here we can see what the results were from the survey. Students were asked to record their birth month (columns) as well as their favorite season(rows). The count for each combination of responses is shown in the table below. 
+
+```{r}
+y <- table(data$Favorite_Season, data$Birth_month)
+pander::pander(y)
+```
+
+The data from the table has been placed in the graph below for visualization. It is important to note that the months are not in sequential order. At a glance it may seem like there could be some sort of correlation. For example, December, a Winter month, seems to have a higher winter column.
+
+```{r}
+
+par(mar = c(4,4,4, 8), xpd = T, mfrow = c(1,1)) 
+barplot(y, beside = T, col = terrain.colors(4), 
+        main = "Favorite Season vs. Month Born")
+legend("topright", inset = c(-.3,0), legend = c("Fall","Spring","Summer","Winter"), fill=terrain.colors(4))
+```
+
+### Test
+
+Running a chi-squared test using R will tell us if any trends we may seem to notice are actually significant. Put more clearly, our test will tell us if we will reject the null hypothesis or not that birth month does not affect people's preference of season. 
+
+```{r, warning=FALSE, message=FALSE}
+y <- table(data$Favorite_Season, data$Birth_month)
+
+chis.kids <- chisq.test(y)
+chis.kids %>% pander::pander()
+```
+
+We see that we come up with a p-value of .3924, which is much more than our level of significance .05, so we fail to reject the null hypothesis. 
+
+### Checking Test Validity
+
+Even though we fail to reject the null in this case, it is still important to check the requirements of our test. 
+
+```{r, warning=FALSE, message=FALSE}
+pander::pander(chis.kids$expected)
+```
+
+Typically, all expected counts are required to be 5 or greater for the test to be appropriate. However, the test is still appropriate if all expected counts are at least 1 and the average of the expected counts is at least 5. In this case one of our expected counts is barely below 5, but we can know that all are above 1 and that the average of them all is well above 5. We can say that our requirements are met. 
+
+We can also take a look at the residuals, which is the expected counts minus the observed counts if our null hypothesis were true. This usually tells us which cells contribute most to the results of our chi-squared test.
+
+```{r}
+pander::pander(chis.kids$residuals)
+```
+
+In this case December/Winter had a much higher residual than the rest, but the rest seem to be very minimal, so it becomes apparent why we did not have a significant p-value. 
+
+### Conclusion
+
+In summary, we find that there is no significant effect that birth month has on favorite season. Relating this back to our original question, there is no true merit to this test proving or disproving the affect one's zodiac sign actually has on personality, however it could be cause for questioning. It The true question lies in how we can accurately classify different personalities. Once this is answered, then run a chi-squared test to see if there really is an association between one's classified zodiac sign and personality type. 
+
+

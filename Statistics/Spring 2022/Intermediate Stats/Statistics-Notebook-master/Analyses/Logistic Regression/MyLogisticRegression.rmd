@@ -1,0 +1,104 @@
+---
+title: "My Simple Logistic Regression"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+<!-- Find some data of interest to you that can be analyzed with a logistic regression. Complete your Logistic Regression Analysis using this file. 
+
+Hint, run the command 
+
+> data() 
+
+in your Console to see available datasets in R that you could use for this Analysis. You are also welcome to collect data yourself, or find other available datasets online for this Analysis. Just be careful to not use anyone else's "analysis" for this Analysis. Also, no conducting surveys unless you have IRB approval to do so. -->
+
+```{r, include=FALSE}
+library(mosaic)
+library(tidyverse)
+library(ResourceSelection) 
+```
+
+
+### Background 
+
+An example data set that we often use in lessons on machine learning is Edgar Anderson's Iris Data Set, which gives the measurements in centimeters of the variables sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor, and virginica. I have found it fascinating how strong the correlation is between the dimensions of the flower and type of flower and that this sort of correlation would occur so strongly in nature. While there may be other key giveaways of the type of flower for a flower expert, it would be interesting to see if using just one measurement on the flower will indicate to us the type of flower. With this example our question will be if there is a clear difference between the sepal width of setosas and other types of iris. 
+
+### Analysis
+
+The probability of a flower being a setosa based on the measured sepal width is given by the following logistic regression model.
+
+
+$$
+  P(Y_i = 1|\, x_i) = \frac{e^{\beta_0 + \beta_1 x_i}}{1+e^{\beta_0 + \beta_1 x_i}} = \pi_i
+$$
+
+In this model, for each measurement i:
+
+$$
+   \text {- } Y_i = \text{ 1 denotes that the flower is a setosa}
+$$
+
+$$
+   \text {- } Y_i = \text{ 0 denotes that the flower is not a setosa}
+$$
+
+$$
+   \text {- } x_i \text{ denotes the length of the sepal width}
+$$
+
+### Hypothesis 
+
+If β1 is zero in the above model, then xi (petal width) provides no insight about the probability of the flower being a setosa. If not zero however, then length plays an important role in the probability of the flower being a setosa. Using a significance level of α=0.05 we will test the below hypotheses about β1.
+
+$$
+  H_0: \beta_1 = 0
+$$
+
+$$
+  H_a: \beta_1 \ne 0
+$$
+
+### Test
+```{r, warning=FALSE, message=FALSE}
+iris.glm <- glm( Species == 'setosa' ~ Sepal.Width, data=iris, family=binomial)
+summary(iris.glm) %>% pander::pander()
+```
+
+The test gives us the equation
+
+$$
+  P(Y_i = 1|\, x_i) = \frac{e^{ -15.72 + 4.79 x_i}}{1+e^{-15.72 + 4.79 x_i}} = \pi_i
+$$
+
+where b0=-15.72 is the value of the (Intercept) which estimates β0 and b1=4.79 is the value of temp which estimates β1.
+
+Important to note it that the p-value for the test of sepal width shows a significant result (p=6.294e-09), giving sufficient evidence to conclude that β1≠0.
+
+```{r, warning=FALSE, message=FALSE}
+plot( Species == 'setosa' ~ Sepal.Width, data=iris, xlab="Sepal Width (cm)", ylab='Probability of Flower Being a Setosa', pch=16, main="Edgar Anderson's Iris Data")
+
+#Getting the coeffiencts
+b <- coef(iris.glm)
+curve(exp(b[1]+b[2]*x)/(1+exp(b[1]+b[2]*x)), add=TRUE)
+```
+
+This plot allows us to visualize our logistical regression test. The points represent actual observations and data that was collected from the flowers. The curve tells us the theoretical likelihood of an iris flower being a setosa at a given sepal width. An example would be that if we were to find a flower with a sepal width of 3.5 cm we would have a little less than an 80% likelihood of the flower being a setosa.
+
+### Checking Model Assumptions
+
+Because not all xi values are replicated many times, we must use the Hosmer-Lemeshow Test.
+
+```{r, warning=FALSE, message=FALSE}
+hoslem.test(iris.glm$y, iris.glm$fitted, g=10) %>% pander::pander()
+```
+
+We have a p-value of .6117 we will fail to reject the null that a logistic regression is a good fit for our data and say that the requirements for a logistic regression with this data are met. 
+
+### Conclusion
+
+Based on the results of our test, it is acceptable to say that sepal width is a great indicator of classifying if a flower is a setosa or not.It would be interesting to see if this holds true for other types of iris. It would also be interesting to see how telling other features are for classifying a setosa. This sort of knowledge would be good to know if one were to build a machine learning model that could automatically measure these dimensions of a flower and then based on certain measurements classify the flower. Some computing power could be saved if we found some dimnsions to be more telling than others.
+
+
+

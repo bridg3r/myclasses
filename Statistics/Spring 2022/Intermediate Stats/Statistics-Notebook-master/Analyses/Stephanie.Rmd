@@ -1,0 +1,78 @@
+---
+title: "Stephanie's Housing Request"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+**Week 2 Analysis**
+
+```{r, message=FALSE, warning=FALSE}
+library(mosaic)
+library(tidyverse)
+library(pander)
+library(DT) # If you get an error stating: 
+            # Error in library(DT): there is no package called 'DT'
+            # You will need to run: install.packages("DT") 
+            # in your Console, then try "Knit HTML" again.
+library(ggrepel)
+Rent <- read_csv("../Data/Rent.csv")
+```
+
+<br />
+
+## Background
+
+Stephanie[^1] is a student that will be starting school at BYU-Idaho next semester. Suppose she sent you the following email.
+
+----
+
+"Hi. My name is Stephanie. I would like to learn about what housing options I have for living at BYU-Idaho next semester. It will be my first semester there, so I would like to find something that is close to campus and around $300 a month in rent. I'm not too picky on roommates, but I would like somewhere that has a lot of people around so I can get to know as many people as possible. Thanks in advance!"
+
+rent ~ 300 
+max people in appt
+
+----
+
+Write your response to Stephanie below. Use the "Rent" dataset, good statistical analysis, and clear writing to make some well supported suggestions to her about apartments that meet her stated criterions. You are free to use other criterion that you think she might find more meaningful as well.
+
+## Response
+
+Dear Stephanie,
+
+  After running a satistical anlysis with my team, we have concluded that based on your requests of around $300, close to campus, and a large capacity, we have decided that Birch apartments would be your best option. It has a monthly rent cost of approximately $280. It is 1 minute away from campus and has a capacity of 343 which is also the highest capacity of all the apartments that are 310 a month or less. We also recommend Royal Crest as a secondary option which is only an extra 3 minutes of walking distance from campus and has almost nearly the same price and capacity.
+  We hope that you have a great semester. Feel free to email us back with any questions or if either one of these apartments don't meet your needs.
+
+Sincerely,
+Bridger Hackworth
+```{r}
+Rent2 <- Rent %>%
+  mutate (monthly_rent = Price/3.5) %>%
+    filter(310 >= monthly_rent & Gender == 'F' & Capacity >= 150) %>%
+    arrange(desc(Capacity), desc(MilesToCampus))
+
+datatable(Rent2, options=list(lengthMenu = c(6,10,30)), extensions='Responsive')
+```
+
+```{r}
+# Code to get you started, be sure to use a subset of Rent instead of Rent in this code though.
+
+ggplot(Rent2, aes(x=Capacity, y=MilesToCampus, label =Apartment)) +
+  geom_text_repel() +
+  geom_point()
+```
+
+This is the graph that our team used to find the best options. All of the apartments on the graph are within the desired price range. The closer to the bottom right an apartment is, the better it fits the otehr criteria of high capacity and low distance to campus.
+
+
+
+
+
+
+
+
+
+[^1]: Note that Stephanie is a fictional character who is based on real experiences of many faculty and staff here at BYU-Idaho.

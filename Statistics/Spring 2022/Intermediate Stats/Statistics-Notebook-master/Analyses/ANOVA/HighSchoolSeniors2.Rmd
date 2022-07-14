@@ -1,0 +1,134 @@
+---
+title: "High School Seniors 2"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+
+```{r, warning=FALSE, message=FALSE}
+library(mosaic)
+library(DT)
+library(pander)
+library(car)
+library(tidyverse)
+
+# Read in the data
+HighSchoolSeniors2 <- read.csv("../../Data/HighSchoolSeniors.csv", header=TRUE) 
+
+HighSchoolSeniors <- HighSchoolSeniors2 %>% filter(Region=='CA' | Region == 'TX') %>% select(Region, Gender, Importance_reducing_pollution)%>%  na.omit()
+```
+
+----
+
+
+<!-- Instructions:
+
+Use the HighSchoolSeniors data set to perform an interesting two-way ANOVA analysis. You'll need to study the data set to decide which variables are most interesting to you. You might look at what you did for the t-Test analysis, and dive more deeply into the questions you researched on that analysis.
+
+Here is a link to the survey given to the students that participated in the study:
+https://ww2.amstat.org/censusatschool/pdfs/C@SQuestionnaire.pdf
+(Use the link to learn about what each column of data in the data set represents.)
+
+Remember you need a Quantitative Y variable and two Qualitative explanatory variables (factors) to perform a two-way ANOVA.
+
+While you should use the warpbreaks and DayCare example analyses as your guide on how to properly complete this analysis, you should also be creative in your final delivery of this analysis. If you copy the format and approach of the example analyses, be sure to give credit in your document to these example analyses. You could write something like, "This work is modeled after the [warpbreaks](https://byuistats.github.io/Statistics-Notebook/Analyses/ANOVA/Examples/warpbreaksTwoWayANOVA.html) analysis." Whatever you do, DO NOT use any of the written statements from the example analyses in your analysis unless you quote them directly and give credit. Using someone else's writing as your own without giving credit to the original author is plagiarism and is an Honor Code Violation. So do your own work. Plus, the more you try to write things in your own words, the more you will learn. Also, note that there aren't really any "rules" about exactly how your document should be organized. So be creative and do something that makes sense to you.
+
+-->
+
+### Background
+
+The democratic party often enjoys writing the narrative that republicans are all sexist men who do not care about the environment. Texas is also notorious for being a red state while California is equally known for being blue. Given the data set that we have from a high school student survey, it would be interesting to see how the importance given to reducing pollution varies between those who are from Texas vs. those who are from California and to see as well if there is a change between genders.
+
+### Hypothesis
+
+In this analysis we will use a two-way ANOVA with the factors of region and gender and their interaction. Below are the three sets of hypotheses that will be used to test the effect of each on individual views on importance of reducing pollution.
+
+1. Does gender effect how an individual views the importance of reducing pollution?
+  Factor: Gender with levels *Men* and *Women*.
+
+$$
+H_0: \mu_\text{Women} = \mu_\text{Men} = \mu
+$$
+$$
+  H_a: \mu_\text{Women} \ne \mu_\text{Men}
+$$
+2. Does an individual's region of origin effect how they view the importance of reducing pollution?
+  Factor: Region with levels *CA* and **TX*
+$$
+H_0: \mu_\text{CA} = \mu_\text{TX} = \mu
+$$
+$$
+H_0: \mu_\text{CA} \ne \mu_\text{TX}
+$$
+3. Does the effect an individual's region of origin change for different genders? (Does the effect of gender change for different regions of origin?) In other words, is there an interaction between region of origin and gender?
+
+$$
+H_0: \text{The effect of state of origin is the same for all genders.}
+$$
+$$
+H_a: \text{The effect of state of origin is not the same for all genders.}
+$$
+The level of significance will be set at: 
+$$
+	\alpha = .05
+$$
+
+### Analysis
+
+```{r}
+warp.aov <- aov(Importance_reducing_pollution ~ Region + Gender + Region:Gender, data=HighSchoolSeniors)
+summary(warp.aov) %>% pander()
+```
+
+The results of our two-way anova test gives us three P-values. They are all much above our level of significance so it seems that there is no relationship any of the three variables that we are considering. 
+
+### Graphical and Numerical Summaries
+```{r}
+xyplot(Importance_reducing_pollution ~ as.factor(Gender), type=c("p","a"), main="Effects of Male vs Female", xlab="Gender", ylab="Importance Reducing Pollution", data=HighSchoolSeniors)
+```
+```{r}
+HighSchoolSeniors %>%
+  group_by(Gender) %>%
+  summarise(`Mean Importance`=mean(Importance_reducing_pollution)) %>%
+  pander(caption="Mean Value of Importance of Reducing Pollution Amongst Genders")
+```
+
+We see from the summaries that the mean value that was given to their importance of reducing pollution is in fact different between men and women. Our statistical analysis however, tells us that this difference is not significant, and would likley not hold true with more data. 
+
+```{r}
+xyplot(Importance_reducing_pollution ~ as.factor(Region), type=c("p","a"), main="Effects of California vs Texas", xlab="Gender", ylab="Importance Reducing Pollution", data=HighSchoolSeniors)
+```
+
+
+```{r}
+HighSchoolSeniors %>%
+  group_by(Region) %>%
+  summarise(`Mean Importance`=mean(Importance_reducing_pollution)) %>%
+  pander(caption="Mean Value of Importance of Reducing Pollution Amongst States")
+```
+
+Here we also see a difference in means. California does indeed seem to be significantly higher, but there is not enough statistical evidence to prove that this is in fact significant. 
+
+```{r}
+xyplot(Importance_reducing_pollution ~ as.factor(Region), data=HighSchoolSeniors, groups=Gender, type=c("p","a"), main="Significance of the Interaction", auto.key=list(corner=c(1,1)))
+```
+```{r}
+HighSchoolSeniors %>%
+  group_by(Gender, Region) %>%
+  summarise(avg=mean(Importance_reducing_pollution), .groups="drop") %>%
+  spread(Region, avg) %>%
+  pander(caption="Mean Warp Breaks according to Wool Type (A,B) and Tension Level (Low, Medium, High)")
+```
+
+### Validity 
+```{r}
+par(mfrow=c(1,2))
+plot(warp.aov, which=1:2, pch=16)
+```
+
+Even though we were unable to reject any of our null hypothesis, it is still important to check the validity of our data. It is strange that in our fitted plot there is a large gap. Despite this, the points seem to be mostly scatted in a random fashion. The Q-Q plot however, does not show a normal distribution of the residuals. This would lead us to reject the data either way.
+
+### Final Interpretation
+When running our statistical tests, there was not enough evidence to reject any of our three null hypothesi. With this we decide for now, that there is no relationship between any of our three variables. Even if our P-values had resulted as smaller, we still would not have had any viable evidence to prove anything since our data was not acceptable. I would recon however, that more data would prove our alternative hypothesis, since the means came out to be what we expected, with women and people from California having higher means in the importance they give to reducing pollution. 

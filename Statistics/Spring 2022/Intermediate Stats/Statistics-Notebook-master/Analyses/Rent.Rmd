@@ -1,0 +1,90 @@
+---
+title: "Rent"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+<!-- Welcome to the first Analysis for Math 325! 
+The goal of this first assignment is to have you produce a graphical summary and a numerical summary of the "Rent" data set. The fun part is that you get to decide what type of graph and what type of numerical summary to create! You will need to read through the "green text" instructions of this document to find the places where you are supposed to enter R-code in order to complete the assignment. -->
+
+
+**Week 1 Analysis**
+
+```{r, message=FALSE, warning=FALSE}
+# This gray area is called an "R-chunk". 
+# These library commands install some powerful functions for your use later on.
+library(mosaic)
+library(pander)
+library(tidyverse)
+library(DT) 
+
+# This read_csv command reads in the "Rent" data set into an object called "Rent"
+Rent <- read_csv("../Data/Rent.csv")
+
+# To load this data set into your R-Console do the following:
+#  1. From your top file menu select "Session -> Set Working Directory -> To Source File Location"
+#  2. Press the green "play button" in the top right corner of this gray box (which is called an "R-chunk").
+#  3. Then in your "Console" window of 
+```
+
+<br />
+
+## Background
+
+Here is a data table showing the available approved housing apartment options at BYU-Idaho for single students. There are 122 entries comprising 57 female and 65 male apartment options.
+
+```{r, warning=FALSE}
+# Code to get you started. 
+# View(...) works great in the Console, but datatable(...) must be
+# used instead within an R-chunk.
+datatable(Rent, options=list(lengthMenu = c(3,10,30)), extensions="Responsive")
+```
+
+
+## Graphic
+
+<!-- Present an interesting graphic using the Rent data set. Do not create the same graphics that are shown in the [Good Example Analysis](./Analyses/StudentHousing.html), but you can certainly use those graphics as a guide to inspire you on what to do yourself. -->
+
+
+```{r}
+# Use this R-chunk to...
+# ...Create an interesting graphic using the Rent data set.
+hist(Rent$Price)
+
+```
+
+
+<!-- Write a few statements here that explain your graphic and what it shows. -->
+
+We see that the prices are not normally distributed and that they are mostly right-skewed. 
+
+
+
+
+```{r}
+# Use this R-chunk to...
+# ...compute and display a meaningful table of numerical summaries supporting your above graphic.
+Rent <- filter(Rent, !is.na(Price))
+Rent %>% 
+   summarise(AveragePrice = mean(Price), 
+             StandardDevetaionofPrice = sd(Price), 
+             MedianPrice = median(Price),
+             MinPrice = min(Price),
+             MaxPrice = max(Price))
+```
+
+<!-- Write a few statements here that introduce your table of numerical summaries and what they show. -->
+
+This table gives us a good idea on what the monthly payment for rent is and how much it varies. The main thing that stands out from the table is that the mean is very close to the median, which would lead one to expect the histogram to be more normally distributed.
+
+
+
+## Conclusion
+
+It is interesting that the mean is close to the median even though the data is not super evenly distributed on the histogram of prices. Overall, this could be helpful for someone who is looking to rent in this area so that they can have a good idea of what they should expect to pay or how the deal they are being offered compares to other ones. I would think it be wise to set aside $1200 in the monthly budget for rent. If someone offers more than this, then it would be expected that the apartment  has other features that set it apart from the rest of those in the area.
+
+

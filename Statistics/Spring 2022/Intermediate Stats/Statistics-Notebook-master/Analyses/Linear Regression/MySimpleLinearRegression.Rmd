@@ -1,0 +1,76 @@
+---
+title: "NBA Linear Regression"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r, warning=FALSE, message=FALSE}
+library(mosaic)
+library(car)
+library(DT)
+library(pander)
+library(readr)
+library(readxl)
+
+stats <- read_excel('/Users/bridg3r/Desktop/NBA20:21.xlsx')
+stats <- stats %>% select(2, 7, 19)
+colnames(stats) <- c('Name', 'MPG', 'PPG')
+stats <- stats[-1,]
+stats <- mutate(stats, MPG = as.integer(MPG), PPG = as.integer(PPG))
+```
+
+
+## Background 
+
+Basketball is my favorite sport. I like the way they dribble up and down the court. Just like I'm the king of doing stats on my own, so is Dr. J and Moses Malone. I like slam dunks. Take me to the hoop. My favorite play is the alley-oop. I like the pick-and-roll. I like the give-and-go. You're analyzing basketball with Mr. Bridger, yo. 
+    
+## Analysis
+
+This analysis attempts to model the points scored per game in the 2020-2021 season by basketball players according to the amount of minutes played per game in the 2020-2021 season. Specifically
+
+![](/Users/bridg3r/Desktop/Screen Shot 2022-06-13 at 11.25.48 AM.png)
+
+The hypotheses for our study concerns the slope of the regression model, β1. If the slope is zero, then there is not a meaningful relationship between minutes played per game and points scored per game.
+
+$$
+  H_0: \beta_1 = 0
+$$
+$$
+  H_a: \beta_1 \ne 0
+$$
+$$
+	\alpha = .05
+$$
+Our data was pulled from https://www.nbastuffer.com/2020-2021-nba-player-stats/. A scatter plot of the relationship between minutes per game and points per game shows a positive trend.
+
+```{r, warning=FALSE, message=FALSE}
+mylm <- lm(PPG ~ MPG, data = stats)
+plot(PPG ~ MPG, data = stats, main="NBA Statistics Data")
+abline(mylm)
+```
+When we run the actual linear regression test using R programming, we get the numbers in the table below.
+```{r, warning=FALSE, message=FALSE}
+pander(summary(mylm))
+```
+
+The estimated regression equation from the scatter plot above is given by
+$$
+  \underbrace{\hat{Y}}_\text{Points Scored Per Game} = -3.139 +.06 \underbrace{X_i}_\text{Minutes Played Per Game} 
+$$
+The estimated slope of this regression is 0.6, which is significantly different from zero.
+
+### Interpretation
+The p-value for our slope is extremely small (1.964e-200) and much much less than our alpha value of 0.05. This means that we can conclude that our slope is significant. It would make a lot of sense that the more minutes a professional basketballer plays, the more points they would score. What makes this analysis useful however, is that our regression line gives a good base of reference for coaches to decide how effective their players really are in scoring points. This could be helpful for finding good prospects who currently are not being given a lot of opportunity. On the flip side, if they lie below this regression line, then they better be contributing significantly in other areas for it to be worth being given playing time. NBA coaches nowadays already have access to much more complex data than this. A similar study however, would likely be really helpful for a high school coach. This would require having the statistics of all of the high school players in the league from a previous season. 
+
+## Appropriateness of the above Regression
+
+When checking the requirements for this analysis, we find that our conclusions really are not statistically viable. Our residuals vs. fitted graph is close to being in a megaphone-ish shape. This could give someone the valid argument that the variance of the error terms is not constant over all X values. The residuals in the Normality Q-Q plot also are not normal in the upper percentile of the data. This data or analysis should not be accepted for a published paper for these reasons. The only plot that is acceptable is the Residuals vs Order plot since it seems to follow a trend of being very highly concentrated around 0.
+```{r}
+par(mfrow=c(1,3))
+plot(mylm, which=1:2)
+plot(mylm$residuals, main="Residuals vs Order", xlab="",
+     ylab="Residuals")
+```
+

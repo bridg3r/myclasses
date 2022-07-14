@@ -1,0 +1,32 @@
+library(tidyverse)
+library(lubridate)
+
+channel <- read_csv('https://raw.githubusercontent.com/BYUIDSS/DSS_S22_KickIt/master/raw_data/sales_channel.csv?token=GHSAT0AAAAAABTXKXRSRT2ZIAXICOJFPO2SYV47FAQ')
+dat19_22 <- read_csv('https://raw.githubusercontent.com/BYUIDSS/DSS_S22_KickIt/master/raw_data/complete_sales.csv?token=GHSAT0AAAAAABTXKXRS2VHNVXO3ZPUBFU5KYV47FWA')
+
+melted <- melt(['date'], var_name = "channel", value_name = "revenue")
+
+#online sales
+channel %>% pivot_longer(c(`Amazon`, `Ebay (2nd)`), names_to = "channel", values_to = "revenue") %>% 
+  separate(revenue, into = c("nothing", "revenue"), sep = 1) %>% 
+  mutate(year = year(date)) %>% 
+ggplot(aes(x=date, y= as.numeric(revenue), color = channel, groups = channel)) +
+  geom_line() +
+  facet_wrap(~year, scales = 'free')
+
+
+channel %>% separate(total, into = c(NA, "revenue"), sep = 1) %>% 
+mutate(year = year(date)) %>% 
+ggplot(aes(x=date, y= as.numeric(revenue))) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~year, scales = 'free')
+
+channel %>% separate(total, into = c(NA, "revenue"), sep = 1) %>% 
+  mutate(year = year(date)) %>% 
+  ggplot(aes(x=date, y= as.numeric(revenue))) +
+  geom_point() +
+  geom_smooth()
+  
+  
+  

@@ -1,0 +1,130 @@
+---
+title: "Car Prices"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+<br>
+
+
+```{r, include=FALSE}
+# Be sure to download the CarPrices.csv file and save it
+# into your Data folder prior to knitting this file.
+CarPrices <- read.csv("/Users/bridg3r/Desktop/Spring 2022/Intermediate Stats/Statistics-Notebook-master/Analyses/Linear Regression/CarPrices.csv", header=TRUE)
+
+library(tidyverse)
+library(pander)
+# Remember, to get the CarPrices data into your Console you have
+# to use the "Import Dataset" option in the "Environment" window.
+```
+
+
+### Background 
+
+Coupes and Convertibles are the most notoriously sporty types of cars. Sporty cars are also usually thought of by many as poor investments. Using the data that we have, we can see which one of the two types will usually hold its value the best. 
+    
+### Analysis
+
+This analysis attempts to model the price of a car according to the amount of miles on the car and the type of the car. Specifically
+
+
+$$
+\underbrace{Y_i}_\text{Price} = \overbrace{\beta_0 + \beta_1 \underbrace{X_{i1}}_\text{Mileage}}^\text{Coupe Line} + 
+\overbrace{
+  \beta_2 \underbrace{X_{i2}}_\text{Convertible} + 
+  \beta_3 \underbrace{X_{i1}X_{i2}}_\text{Interaction}
+}^\text{Covertible Adjustments to Line} +\epsilon_i 
+$$
+
+### Hypothesis
+If β1 is zero in the combined regression model, then the slope of our baseline, which represents the average change in price per mile driven, is 0. 
+This would mean that there is no linear relationship between these two variables.
+
+$$
+  H_0: \beta_1 = 0 \text{   (Change in price per mile for coupes)}
+$$
+
+$$
+  H_0: \beta_1 \ne 0 \text{   (Change in price per mile for coupes)}
+$$
+
+If β2 is zero in the combined regression model, then the y-intercepts, which represent the average cost of a brand new vehicle, are the same for the coupe and convertible. If β2 is greater than zero, then the convertible costs more on average than the coupe when brand new, and if β2 is less than zero, then the convertible costs less.
+
+$$
+  H_0: \beta_2 = 0 \text{   (Equal average cost when brand new)}
+$$
+$$
+  H_a: \beta_2 \ne 0 \text{   (Non-equal average cost when brand new)}
+$$
+If β3 is zero, then the slopes of the two lines are the same. This would imply that the rate of depreciation is the same for both the coupe and the convertible. However, if the slopes differ, i.e., β3≠0, then one vehicle type loses its value faster than the other.
+
+$$
+  H_a: \beta_3 = 0  \text{   (Equal rates of depreciation)}
+$$
+$$
+  H_a: \beta_3 \ne 0  \text{   (Non-equal rates of depreciation)}
+$$
+
+The level of significance for all of these tests will be
+
+$$
+	\alpha = .05
+$$
+
+### Test
+
+```{r, warning=FALSE, message=FALSE}
+## Code for the linear regression
+CarPrices2 <- CarPrices %>% filter(Type == "Convertible" | Type == 'Coupe')
+cars_lm <- lm(Price ~ Mileage + Type + Mileage:Type, data=CarPrices2)
+
+plot(Price ~ Mileage, data = CarPrices2, col=c("skyblue","orange")[as.factor(Type)], main="Two-lines Model Using CarPrices Data Set")
+legend("topleft", legend=c("Changed-line (Convertible)", "Baseline (Coupe)"), bty="n", lty=1, col=c("skyblue","orange"), cex=0.8)
+
+b <- coef(cars_lm)
+# Then b will have 4 estimates:
+# b[1] is the estimate of beta_0: -9.0099
+# b[2] is the estimate of beta_1:  1.4385
+# b[3] is the estimate of beta_2: -14.5107
+# b[4] is the estimate of beta_3: 1.3214
+curve(b[1] + b[2]*x, col="skyblue", lwd=2, add=TRUE)  #baseline (in blue)
+curve((b[1] + b[3]) + (b[2] + b[4])*x, col="orange", lwd=2, add=TRUE) #changed line (in orange)
+
+```
+
+A scatter plot of the relationship between mileage and price shows a big difference between the two types. Coupes are much more expensive than convertibles but seem to depreciate at a faster rate. The results of the numerical test will tell us if the differences are statistically significant. 
+
+```{r, warning=FALSE, message=FALSE}
+pander(summary(cars_lm))
+```
+
+All of our p-values are much below our alpha value so we can conclude that the y-intercept and the slopes are significantly different for the two types of cars. We can model the actual relationships using the equation:
+
+$$
+  \underbrace{Y_i}_\text{Price} = \overbrace{51273 -0.5043 \underbrace{X_{i1}}_\text{Mileage}}^\text{Coupe Line} + 
+\overbrace{
+  -29891  \underbrace{X_{i2}}_\text{Convertible} -
+  0.3203 \underbrace{X_{i1}X_{i2}}_\text{Interaction}
+}^\text{Covertible Adjustments to Line} +\epsilon_i 
+$$
+
+
+### Interpretation
+Based on the results of our test, we find that there is indeed a significant difference between the starting price of coupes and convertibles. Coupes on average cost $29891 less than convertibles do when they have 0 miles. They also hold their value a little bit better than convertibles do with only a $.184 decrease in value per mile driven, compared to a $.5043 decrease per mile driven for coupes. This is good to keep in mind when wanting to purchase a sporty car. If you think that you might resell your car one day, then a coupe may be a better option. It would be helpful to now, in the future, do another test comparing one of these to a non-sporty car, like a sedan and see if a coupes price trends are more similar to the convertible or a sedan. It would also give us a good idea of how financially reckless the purchase of a convertible really is. 
+
+### Appropriateness of the above Regression
+
+For the first plot, has a strange pattern but this is not why it is unacceptable. It seems to fan out a good amount as the x-axis moves to the right. This could be argued to not be acceptable data. 
+The second plot is also not linear since when also moving to the right of the x-axis it loses all normality.
+The third plot is also very questionable since since all of the data points are clustered together in little groups. This is cause for suspicion. Ultimately if one of any of the requirements from these plots are not met, then the results of the test are not valid. 
+
+```{r}
+par(mfrow=c(1,3))
+plot(cars_lm, which=1:2)
+plot(cars_lm$residuals, main="Residuals vs Order", xlab="",
+     ylab="Residuals")
+
+```
+

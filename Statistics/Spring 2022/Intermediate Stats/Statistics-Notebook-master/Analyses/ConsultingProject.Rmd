@@ -1,0 +1,94 @@
+---
+title: "Consulting Project"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+
+```{r, include=FALSE}
+library(mosaic)
+library(tidyverse)
+library(ResourceSelection) 
+data <- read_csv('/Users/bridg3r/Desktop/warriors2021-2022.csv')
+```
+
+
+### Background 
+
+The Golden State Warriors won the 2022 NBA championship. Their style of play has been said to have revolutionized all of basketball due to their impressive 3-point shooting with players like Stephen Curry and Klay Thompson. Claims as such may lead one to question how impactful is their 3-point shooting on their wins? Can the amount of 3 pointers the Warriors made in a game be a good predictor of wheather or not they won the game. 
+
+### Analysis
+
+The probability of the Warriors winning the game is given by the following logistic regression model.
+
+
+$$
+  P(Y_i = 1|\, x_i) = \frac{e^{\beta_0 + \beta_1 x_i}}{1+e^{\beta_0 + \beta_1 x_i}} = \pi_i
+$$
+
+In this model, for each measurement i:
+
+$$
+   \text {- } Y_i = \text{ 1 indicates that the warriors won the game}
+$$
+
+$$
+   \text {- } Y_i = \text{ 0 denotes that the Warriors lost the game}
+$$
+
+$$
+   \text {- } x_i \text{ denotes the amount of 3 pointers made in the game}
+$$
+
+### Hypothesis 
+
+If β1 is zero in the above model, then xi (3 pointers made) provides no insight about the probability of the Warriors winning the game. If not zero however, then amount of 3 pointers made plays an important role in the probability of the Warriors winning the game. Using a significance level of α=0.05 we will test the below hypotheses about β1.
+
+$$
+  H_0: \beta_1 = 0
+$$
+
+$$
+  H_a: \beta_1 \ne 0
+$$
+
+### Test
+```{r, warning=FALSE, message=FALSE}
+wars.glm <- glm( WinsLosses == 'W'~ ThreesMade, data=data, family=binomial)
+summary(wars.glm) %>% pander::pander()
+```
+
+The test gives us the equation
+
+$$
+  P(Y_i = 1|\, x_i) = \frac{e^{ -1.82 + 0.1383 x_i}}{1+e^{-1.82 + 0.1383 x_i}} = \pi_i
+$$
+
+where b0=-1.82 is the value of the (Intercept) which estimates β0 and b1=.1383 is the value of temp which estimates β1.
+
+Important to note however, the p-value for the test of temp does not quite show a significant result (p=0.05481), giving insufficient evidence to conclude that β1≠0.
+
+```{r, warning=FALSE, message=FALSE}
+plot( WinsLosses == 'W' ~ ThreesMade, data=data, xlab="3-Pointers Made", ylab='Probability of Winning the Game', pch=16, main="2021-2022 Golden State Warriors")
+
+#Getting the coeffiencts
+b <- coef(wars.glm)
+curve(exp(b[1]+b[2]*x)/(1+exp(b[1]+b[2]*x)), add=TRUE)
+```
+
+### Checking Model Assumptions
+
+Because not all xi values are replicated many times, we must use the Hosmer-Lemeshow Test. With a level of significance = .05. Our null hypothesis, in this case, is that our data is accpetable. If we get a p-value less than .05 then we will reject this null hypothesis.
+
+```{r, warning=FALSE, message=FALSE}
+hoslem.test(wars.glm$y, wars.glm$fitted, g=10) %>% pander::pander()
+```
+
+We have a p-value of .7085 we will fail to reject the null that a logistic regression is a good fit for our data and say that the requirements for a logistic regression with this data are met. 
+
+### Conclusion
+
+The results of our test show that there really isn't a strong link between the amount of three pointers made and if the game was won or not. This ultimately shows that anyone who beleives that the Warriors are only a three-point shooting team, does not give the Warriors enough credit for how good and well-rounded that they really are. This ultimately tells us that there were many other factors and things that the warriors did to win their games. Future analysis would be helpful when analyzing other statistics that most strongly led to the Warriors winning their games. Some of these could even be scoring from individual players on the team like Steph Curry or even the impact some of the players may have had off the bench. 
+
