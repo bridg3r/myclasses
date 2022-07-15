@@ -1,0 +1,121 @@
+# %%
+import pandas as pd
+import numpy as np
+import altair as alt
+
+import urllib3
+import json
+
+# %%
+url_cars = "https://github.com/byuidatascience/data4missing/raw/master/data-raw/mtcars_missing/mtcars_missing.json"
+cars = pd.read_json(url_cars)
+
+# %%
+# the long way to help us understand json files and 
+url_flights = 'https://github.com/byuidatascience/data4missing/raw/master/data-raw/flights_missing/flights_missing.json'
+http = urllib3.PoolManager()
+response = http.request('GET', url_flights)
+flights_json = json.loads(response.data.decode('utf-8'))
+flights = pd.json_normalize(flights_json)
+
+# %%
+df = pd.DataFrame({"name": ['Alfred', 'Batman', 'Catwoman', np.nan],
+                   "toy": [None, 'Batmobile', 'Bullwhip',np.nan],
+                   "born": [pd.NaT, pd.Timestamp("1940-04-25"),
+                            pd.NaT, pd.NaT],
+                    "power": [np.nan, np.nan, np.nan, np.nan]})
+
+# %%
+ df.dropna(how="all", axis = 1)
+# %%
+ df.dropna(how="all", axis = 1).dropna(how="all")
+
+ # %%
+ # drop rows with NA for a specified column
+ df.dropna(subset = ['born'], axis=0)
+
+# %%
+flights.dropna(subset = ['month'])
+# %%
+flights.month.replace('n/a', np.NaN)
+
+#%%
+flights.year.value_counts()
+
+flight
+# %%
+flights.columns.value_counts()
+#17 total attributes
+#924 flights total
+# %%
+flights.airport_code.value_counts() # feels good
+#nothing is missing ; 132 flights per airport
+#%%
+flights.airport_name.value_counts()
+# 56 missing total; SF 5 ; ATL 6; CHI 7; SD 7
+# DEN 10; SLC 10; WAS; 11
+
+#%%
+flights.year.value_counts()
+#23 missing
+
+# %%
+flights.month.value_counts()
+# 27 missing
+
+# %%
+pd.crosstab(flights.month, flights.year)
+# years: 05 2, 06 1, 07 2, 08 3, 09 2, 10 3,
+# 11 2, 12 2, 13 3, 14 2, 15 1
+#access month data for rows with misisng years
+#
+# %%
+pd.crosstab(flights.month, flights.airport_code)
+
+# %%
+# https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.describe.html
+flights.year.describe()
+# %%
+flights.year.isna().sum()
+flights.year.value_counts()
+#%%
+flights.shape
+# %%
+flights.num_of_delays_late_aircraft.describe()
+# %%
+ndmeans = flights.num_of_delays_late_aircraft.replace(-999, np.NaN).mean()
+
+flights.num_of_delays_late_aircraft.replace(-999, np.NaN).fillna(ndmeans)
+
+datc = flights.assign(
+    num_of_delays_late_aircraft = lambda x: x.num_of_delays_late_aircraft.replace(-999, np.NaN).fillna(ndmeans)
+)
+# %%
+
+#Question #3
+# num_of delays_nas
+# num_of_delays_late_aircraft
+# num_of_delays_weather
+# month 
+
+weather = flights.assign(
+    severe = lambda x: x.num_of_delays_weather
+    #need to fix missing,
+    nodla_nona = lambda x: x.num_of_delays_late_aircraft.replace.replacen(-999, p.NaN),
+    mild_late = lambda x: x.nodla_nona.fillna(x.nodla_non.mean()),
+    # need to fix missing,
+    mild = lambda x :np.where(
+        x.month.isin(['April', 'May',   'June', 'July', 'August'])
+        x.num_delays_nas * .4,
+        x.num_of_delays_nas * .65
+        ),
+
+    #use isin, 
+     # fix missing * proportion, 
+     # fix missing * proportion
+    weather = lambda x: x.severe + x.mild_late + x.mild,
+    # add up stuff
+    percent_weather = lambda x: x.weather / x.num_of_delays_total
+    # calculate percent weather over total
+).filter(['airport_code','month','severe','mild', 'mild_late',
+    'weather', 'num_of_delays_total', 'percent_weather'])

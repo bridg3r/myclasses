@@ -1,0 +1,9 @@
+clean = flights.assign(
+    month = flights.month.replace('n/a', np.Nan), 
+    num_of_delays_late_aircraft = flights.num_of_delays_late_aircraft.replace(-999. np.NaN)
+    num_of_delays_carrier = flights.num_of_delays_carrier.replace("1500+", "1750").astype('int64'),
+    #year is already missing
+)
+
+
+clean.to_json('flights_clean.json')

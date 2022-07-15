@@ -1,0 +1,158 @@
+# %%
+import pandas as pd
+import numpy as np
+import altair as alt
+
+import urllib3
+import json
+
+# %%
+url_cars = "https://github.com/byuidatascience/data4missing/raw/master/data-raw/mtcars_missing/mtcars_missing.json"
+cars = pd.read_json(url_cars)
+
+# %%
+# the long way to help us understand json files and 
+url_flights = 'https://github.com/byuidatascience/data4missing/raw/master/data-raw/flights_missing/flights_missing.json'
+http = urllib3.PoolManager()
+response = http.request('GET', url_flights)
+flights_json = json.loads(response.data.decode('utf-8'))
+flights = pd.json_normalize(flights_json)
+
+# %%
+df = pd.DataFrame({"name": ['Alfred', 'Batman', 'Catwoman', np.nan],
+                   "toy": [None, 'Batmobile', 'Bullwhip',np.nan],
+                   "born": [pd.NaT, pd.Timestamp("1940-04-25"),
+                            pd.NaT, pd.NaT],
+                    "power": [np.nan, np.nan, np.nan, np.nan]})
+
+# %%
+ df.dropna(how="all", axis = 1)
+# %%
+ df.dropna(how="all", axis = 1).dropna(how="all")
+
+ # %%
+ # drop rows with NA for a specified column
+ df.dropna(subset = ['born'], axis=0)
+
+# %%
+flights.dropna(subset = ['month'])
+# %%
+flights.month.replace('n/a', np.NaN)
+
+
+# %%
+flights.columns
+# %%
+flights.airport_code.value_counts() # feels good
+flights.airport_name.value_counts()
+# %%
+flights.month.value_counts()
+# %%
+pd.crosstab(flights.month, flights.year)
+# %%
+pd.crosstab(flights.month, flights.airport_code)
+
+# %%
+# https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.describe.html
+flights.year.describe()
+flights.year.isna().sum()
+flights.year.value_counts()
+flights.shape
+# %%
+flights.num_of_delays_late_aircraft.describe()
+# %%
+ndmeans = flights.num_of_delays_late_aircraft.replace(-999, np.NaN).mean()
+
+flights.num_of_delays_late_aircraft.replace(-999, np.NaN).fillna(ndmeans)
+
+datc = flights.assign(
+    num_of_delays_late_aircraft = lambda x: x.num_of_delays_late_aircraft.replace(-999, np.NaN).fillna(ndmeans)
+)
+# %%
+
+### Day 3
+
+days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] * 4
+days.sort()
+
+df=pd.DataFrame({
+    'hour': ["9am", "10am", "11am", "12pm"] * 5,
+    'dayofweek': days,
+    'cnt': [5, 18, 2, 3, 19, 1, 9, 0, 7, 10,
+        12, 3, 1, 17, 6, 7, 10, 11, 3, 4]}) 
+
+alt.Chart(df, height=210).mark_rect().encode(
+    alt.Y(
+        "hour",
+        sort = ["9am", "10am", "11am", "12pm"],
+        title="Hour"), 
+    alt.X(
+        "dayofweek",
+        sort=["Mon", "Tue", "Wed", "Thu", "Fri"],
+        title="Day of Week"),
+        color=alt.Color(
+            "cnt", 
+            scale=alt.Scale(
+                range=['lightyellow','red']), 
+        legend=alt.Legend(title='Count')
+    ),
+    tooltip=[
+        alt.Tooltip("cnt", title="Count")
+    ]
+).properties(width=250)
+
+# %%
+# 3. According to the BTS website the Weather category only accounts for severe weather delays. Other "mild" weather delays are included as part of the NAS category and the Late-Arriving Aircraft category. Calculate the total number of flights delayed by weather (either severe or mild) using these two rules:
+
+# - 30% of all delayed flights in the Late-Arriving category are due to weather.
+# - From April to August, 40% of delayed flights in the NAS category are due to weather. The rest of the months, the proportion rises to 65%.
+
+# 4. Create a barplot showing the proportion of all flights that are delayed by weather at each airport. What do you learn from this graph (Careful to handle the missing Late Aircraft data correctly)?
+
+# %%
+import pandas as pd
+import numpy as np
+import altair as alt
+
+import urllib3
+import json
+
+url_flights = 'https://github.com/byuidatascience/data4missing/raw/master/data-raw/flights_missing/flights_missing.json'
+http = urllib3.PoolManager()
+response = http.request('GET', url_flights)
+flights_json = json.loads(response.data.decode('utf-8'))
+flights = pd.json_normalize(flights_json)
+# %%
+# Calculate the total number of flights delayed by weather (either severe or mild) using these rules: 
+
+# the Weather category `num_of_delays_weather` only accounts for severe weather delays. 
+# Other "mild" weather delays are included as part of 
+#### - 30% of all delayed flights in the Late-Arriving category are due to weather `num_of_delays_late_aircraft`.
+#### - From April to August, 40% of delayed flights in the NAS category are due to weather. The rest of the months, the proportion rises to 65%. `num_of_delays_nas` and `month`
+
+# num_of_delays_nas
+# num_of_delays_late_aircraft
+# num_of_delays_weather 
+# month
+
+# %%
+weather = flights.assign(
+    severe = lambda x: x.num_of_delays_weather,
+    # just making to deal with NaNs.
+    nodla_nona = lambda x: x.num_of_delays_late_aircraft.replace(-999, np.NaN),
+    mild_late = lambda x: x.nodla_nona.fillna(x.nodla_nona.mean()),
+    # n/a months get treated like severe months
+    mild = lambda x: np.where(
+        x.month.isin(['April', 'May', 'June', 'July', 'August']), 
+        x.num_of_delays_nas * 0.4,
+        x.num_of_delays_nas * 0.65
+        ),
+    weather = lambda x: x.severe + x.mild_late + x.mild,
+    percent_weather = lambda x: x.weather / x.num_of_delays_total
+).filter(['airport_code','month','severe','mild', 'mild_late',
+    'weather', 'num_of_delays_total', 'percent_weather'])
+
+weather
+
+
+# %%

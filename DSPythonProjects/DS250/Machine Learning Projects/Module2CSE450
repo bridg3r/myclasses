@@ -1,0 +1,245 @@
+'''
+Mike Suggestions: Switch to a random Forest balance the data set
+
+-false positives are not as bad as false negatives
+
+imbalanced datset
+removing features
+ensemble
+feature engineering
+external data
+one hot encoding
+random forest
+Assignmenets: feature engineering one-hot encode occupation Kavyn: remove feature / forest / imbalanced data set jeff: binning, days of the week jacob: removing features, cleaning data
+
+Take months and put them into season and one hot encode the season
+
+Mike Suggestions: Switch to a random Forest bakance the data set
+
+-false positives are not as bad as false negatives
+
+imbalanced datset
+removing features
+ensemble
+feature engineering
+external data
+one hot encoding
+random forest
+Assignmenets: feature engineering one-hot encode occupation Kavyn: remove feature / forest / imbalanced data set jeff: binning, days of the week jacob: removing features, cleaning data
+
+Questions:
+ - Should we only call single people on Saturdays?
+ - Does it make sense to call students at all?
+ - does contacting people too frequently for these marketing campaigns have an adverse affect on the outcome?
+ - We may want to see separate models for times when, for example, the consumer confidence index is high compared to when it is low
+ -  persist those trained models to a file so we can load them into our production systems.
+ - Then, please submit a csv file that has a single column, with the header "predictions" and a prediction (one per row) for each individual in this file. If we should contact the individual, predict a 1. If we shouldn't contact the individual, predict a 0 for that row. There should be 4,119 predictions in the csv file when completed
+ - You'll want to save these trained models using python's pickle module
+'''
+
+#%%
+import pandas as pd
+import numpy as np
+import altair as alt
+import seaborn as sns
+
+campaign = pd.read_csv('https://raw.githubusercontent.com/byui-cse/cse450-course/master/data/bank.csv')
+
+holdout = pd.read_csv('https://raw.githubusercontent.com/byui-cse/cse450-course/master/data/bank_holdout_test.csv')
+#%%
+# Explore the columns 
+#     months are missing Jan and Feb
+
+# What are the most succesful months?
+
+months = alt.Chart(campaign).mark_bar().encode(
+    alt.X("month",
+    sort = ['mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']),
+    y='count()',
+)
+
+holdout_months = alt.Chart(holdout).mark_bar().encode(
+    alt.X("month",
+    sort = ['mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']),
+    y='count()',
+)
+
+ye=campaign.query("y == 'yes'")
+ye = ye.groupby(['month']).count().reset_index()
+mo = campaign.groupby(['month']).count().reset_index()
+ynm_prop = ye.assign(y2 = mo.y).assign(prop = lambda x: x.y / x.y2 )
+
+alt.Chart(ynm_prop).mark_bar().encode(
+    alt.X("month",
+    sort = ['mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']),
+    alt.Y("prop", axis=alt.Axis(title='Success Rate')),
+)
+
+totaly = campaign.query("y == 'yes'")
+
+alt.Chart(totaly).mark_bar().encode(
+    alt.X("month",
+    sort = ['mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']),
+    y='count()',
+)
+
+#  most succesful days
+#shows that middle of the week tends to have more success
+
+days = alt.Chart(campaign).mark_bar().encode(
+    alt.X("day_of_week",
+    sort = ['mon', 'tue', 'wed', 'thu', 'fri']),
+    y='count()',
+)
+
+ye2=campaign.query("y == 'yes'")
+ye2 = ye2.groupby(['day_of_week']).count().reset_index()
+day = campaign.groupby(['day_of_week']).count().reset_index()
+ynd_prop = ye2.assign(y2 = day.y).assign(prop = lambda x: x.y / x.y2 )
+
+alt.Chart(ynd_prop).mark_bar().encode(
+    alt.X("day_of_week",
+    sort = ['mon', 'tue', 'wed', 'thu', 'fri']),
+    alt.Y("prop", axis=alt.Axis(title='Success Rate'))
+)
+
+# effect of num of contacts on success
+
+ye3=campaign.query("y == 'yes'")
+ye3 = ye3.groupby(['previous']).count().reset_index()
+conts = campaign.groupby(['previous']).count().reset_index()
+cnts_prop = ye3.assign(y2 = conts.y).assign(prop = lambda x: x.y / x.y2 )
+
+alt.Chart(cnts_prop).mark_line().encode(
+    alt.X("previous", axis=alt.Axis(title='Attempts With Customer')),
+    alt.Y("prop", axis=alt.Axis(title='Success Rate'))
+)
+
+alt.Chart(cnts_prop).mark_line().encode(
+    alt.X("previous"),
+    y='age'
+)
+
+#Success by age
+
+# fix that when I filter to yes some of the age groups are removed 
+
+
+yeg=campaign.query("y == 'yes'")
+yeg = yeg.groupby(['age']).count().reset_index()
+ages = campaign.groupby(['age']).count().reset_index()
+yna_prop = yeg.assign(y2 = ages.y).assign(prop = lambda x: x.y / x.y2 )
+
+
+for i in list(ages.age):
+    if i not in list(yeg.age):
+        print(i)
+
+
+
+alt.Chart(yna_prop).mark_line().encode(
+    alt.X("age"),
+    y='prop',
+)
+
+#total at each age
+alt.Chart(yna_prop).mark_line().encode(
+    alt.X("age"),
+    y='marital',
+)
+
+'''
+Step-by-step: 
+-remove obviously irrelevant columns
+-combine features if possible
+-deal with missing values
+-factorize, normalize, bin, one hot encode
+-balance the dataset
+-test out the random forrest
+-figure out most irrelevant columns
+-try difrent misisng values
+-try different binning and normalizing
+'''
+
+#drop irrelevant columns
+one = campaign.drop(columns='default')
+
+#missing values
+one['pdays']=one.pdays.replace(999, np.NaN)
+one['poutcome']=one.pdays.replace('nonexistent', np.NaN)
+one = one.replace('unknown', np.NaN)
+
+# factorize education
+schools = {"basic.4y": 4,"basic.6y": 6,"basic.9y": 9,"high.school": 12, "illiterate": 0,"professional.course": 14,"university.degree":16}
+one['education'] = one.education.replace(schools)
+
+#factorize all 1 0 columns
+one = one.assign(
+    housing = pd.factorize(one['housing'])[0],
+    loan = pd.factorize(one['loan'])[0],
+    contact = pd.factorize(one['contact'])[0],
+    poutcome = pd.factorize(one['poutcome'])[0],
+    y = pd.factorize(one['y'])[0],
+    day_of_week = pd.factorize(one['day_of_week'])[0]
+)
+
+#bin months
+seas = {'mar': 'spring', 'apr':'spring', 'may':'spring', 'jun':'summer', 'jul':'summer', 'aug':'summer', 'sep':'fall', 'oct':'fall', 'nov':'fall', 'dec': 'winter'}
+one = one.assign(season=one.month.replace(seas))
+one = one.drop(columns='month')
+
+#remove rest of NaN values
+one['pdays'] = one.pdays.replace(np.NaN, 0)
+one['education'] = one.education.replace(np.NaN, one.education.median())
+
+#normalize all numerical columns
+# age, education, campaign, pdays, emp.var.rate,
+# cons.price.idx, cons.conf.idx, euribor3m, nr.employed
+one['age']= (one.age-one.age.min())/(one.age.max()-one.age.min())
+one['education']= (one.education-one.education.min())/(one.education.max()-one.education.min())
+one['campaign']= (one.campaign-one.campaign.min())/(one.campaign.max()-one.campaign.min())
+one['pdays']= (one.pdays-one.pdays.min())/(one.pdays.max()-one.pdays.min())
+one['emp.var.rate']= (one['emp.var.rate']-one['emp.var.rate'].min())/(one['emp.var.rate'].max()-one['emp.var.rate'].min())
+one['cons.price.idx']= (one['cons.price.idx']-one['cons.price.idx'].min())/(one['cons.price.idx'].max()-one['cons.price.idx'].min())
+one['euribor3m']= (one['euribor3m']-one['euribor3m'].min())/(one['euribor3m'].max()-one['euribor3m'].min())
+one['nr.employed']= (one['nr.employed']-one['nr.employed'].min())/(one['nr.employed'].max()-one['nr.employed'].min())
+one['cons.conf.idx']= (one['cons.conf.idx']-one['cons.conf.idx'].min())/(one['cons.conf.idx'].max()-one['cons.conf.idx'].min())
+
+
+#One-hot-encode remaining columns
+two = pd.get_dummies(one,  columns=['marital', 'job', 'season'], drop_first=True)
+
+#Balnce the dataset; oversample
+
+
+
+import pandas as pd
+import numpy as np
+import altair as alt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn import tree
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn import metrics
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+
+# try a random forest
+X = dat_get_dummies.drop(columns='y')
+y = dat_get_dummies.y
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size = .34,
+    random_state = 76)
+clf = tree.DecisionTreeClassifier()
+clf = clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+accuracy_score(y_test,y_pred)
+precision_score(y_test, y_pred, average=None)
+
+print(metrics.confusion_matrix(y_test, y_pred))
+metrics.plot_confusion_matrix(clf, X_test, y_test)
+print(metrics.classification_report(y_test, y_pred))
+# %%
